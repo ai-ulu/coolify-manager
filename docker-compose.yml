@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  coolify-manager:
+    build: .
+    container_name: coolify-manager
+    restart: unless-stopped
+    environment:
+      - COOLIFY_API_URL=https://coolify.ai-ulu.com
+      - COOLIFY_API_KEY=gJQaCiXa3o6Kw4e4WBT3RgmIon7ltUiEAioLLMTLb2d454bb
+      - TELEGRAM_BOT_TOKEN=7983514177:AAEk5pO0q1w209q5-Im1iRkxV6v3FS0UIP8
+      - OLLAMA_BASE_URL=http://ollama:11434
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    network_mode: host
+    # Ağ için bridge modu (port expose etmek için):
+    # ports:
+    #   - "5000:5000"
+
+  # Eğer ollama localde değilse ekleyin:
+  # ollama:
+  #   image: ollama/ollama
+  #   ports:
+  #     - "11434:11434"
+  #   volumes:
+  #     - ollama_data:/root/.ollama
+  #   restart: unless-stopped
+
+# volumes:
+#   ollama_data:

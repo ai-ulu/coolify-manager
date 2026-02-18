@@ -1,0 +1,24 @@
+[Unit]
+Description=Coolify Multi-Agent Management System
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/coolify-manager
+ExecStart=/usr/bin/python3 /opt/coolify-manager/run.py
+Restart=always
+RestartSec=10
+
+# Environment variables
+Environment=COOLIFY_API_URL=https://coolify.ai-ulu.com
+Environment=COOLIFY_API_KEY=gJQaCiXa3o6Kw4e4WBT3RgmIon7ltUiEAioLLMTLb2d454bb
+Environment=TELEGRAM_BOT_TOKEN=7983514177:AAEk5pO0q1w209q5-Im1iRkxV6v3FS0UIP8
+Environment=OLLAMA_BASE_URL=http://ollama:11434
+
+# Logging
+StandardOutput=append:/opt/coolify-manager/logs/stdout.log
+StandardError=append:/opt/coolify-manager/logs/stderr.log
+
+[Install]
+WantedBy=multi-user.target
