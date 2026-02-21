@@ -2,6 +2,7 @@
 Telegram bot interface for Coolify manager.
 """
 
+import asyncio
 import logging
 from typing import Dict, Optional
 
@@ -304,8 +305,15 @@ class CoolifyBot:
 
     def run(self):
         logger.info("Telegram bot polling started")
-        # Running in worker thread: disable signal handlers to avoid set_wakeup_fd errors.
-        self.app.run_polling(drop_pending_updates=True, stop_signals=None)
+        # Running in worker thread: create a loop explicitly for Python 3.11+.
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            # Disable signal handlers in non-main thread.
+            self.app.run_polling(drop_pending_updates=True, stop_signals=None)
+        finally:
+            asyncio.set_event_loop(None)
+            loop.close()
 
 
 bot: Optional[CoolifyBot] = None

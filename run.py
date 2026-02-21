@@ -72,8 +72,13 @@ class CoolifyManager:
         logger.info("=" * 50)
 
         if self.bot:
-            # Prevent event-loop conflict with python-telegram-bot run_polling().
-            await asyncio.to_thread(self.bot.run)
+            # Bot polling is blocking; run it in a worker thread.
+            try:
+                await asyncio.to_thread(self.bot.run)
+            except Exception as exc:
+                logger.exception("Telegram bot crashed, continuing without bot: %s", exc)
+                while self.running:
+                    await asyncio.sleep(5)
         else:
             while self.running:
                 await asyncio.sleep(5)
