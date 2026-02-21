@@ -283,40 +283,41 @@ class OrchestratorAgent:
     def _parse_intent(self, text: str) -> ParsedIntent:
         stripped = text.strip()
         lowered = stripped.lower()
+        lowered_norm = self._normalize_turkish(lowered)
 
         if self.llm_enabled:
             llm_intent = self._parse_with_llm(stripped)
             if llm_intent:
                 return llm_intent
 
-        app_name = self._extract_app_name(lowered)
-        if any(k in lowered for k in ["yardim", "help", "komut"]):
+        app_name = self._extract_app_name(lowered_norm)
+        if any(k in lowered_norm for k in ["yardim", "help", "komut"]):
             return ParsedIntent(action="help", app_name=app_name, raw=stripped)
         if (
-            any(k in lowered for k in ["sunucu", "server", "coolify"])
-            and any(k in lowered for k in ["durum", "status", "kontrol", "rapor"])
-            and any(k in lowered for k in ["yapilandirma", "ayar", "config"])
+            any(k in lowered_norm for k in ["sunucu", "server", "coolify"])
+            and any(k in lowered_norm for k in ["durum", "status", "kontrol", "rapor"])
+            and any(k in lowered_norm for k in ["yapilandirma", "ayar", "config"])
         ):
             return ParsedIntent(action="status_and_config", app_name=app_name, raw=stripped)
-        if any(k in lowered for k in ["yapilandirma", "ayar", "config"]):
+        if any(k in lowered_norm for k in ["yapilandirma", "ayar", "config"]):
             return ParsedIntent(action="security_report", app_name=app_name, raw=stripped)
-        if all(k in lowered for k in ["sunucu", "rapor"]) or "durum" in lowered or "status" in lowered:
+        if all(k in lowered_norm for k in ["sunucu", "rapor"]) or "durum" in lowered_norm or "status" in lowered_norm:
             return ParsedIntent(action="status_report", app_name=app_name, raw=stripped)
-        if any(k in lowered for k in ["uygulama", "app"]) and any(k in lowered for k in ["liste", "list"]):
+        if any(k in lowered_norm for k in ["uygulama", "app"]) and any(k in lowered_norm for k in ["liste", "list"]):
             return ParsedIntent(action="list_apps", app_name=app_name, raw=stripped)
-        if any(k in lowered for k in ["backup", "yedek"]) and any(k in lowered for k in ["liste", "list"]):
+        if any(k in lowered_norm for k in ["backup", "yedek"]) and any(k in lowered_norm for k in ["liste", "list"]):
             return ParsedIntent(action="list_backups", app_name=app_name, raw=stripped)
-        if any(k in lowered for k in ["tum", "hepsi"]) and any(k in lowered for k in ["backup", "yedek"]):
+        if any(k in lowered_norm for k in ["tum", "hepsi"]) and any(k in lowered_norm for k in ["backup", "yedek"]):
             return ParsedIntent(action="backup_all", app_name=app_name, raw=stripped)
-        if any(k in lowered for k in ["backup", "yedek"]):
+        if any(k in lowered_norm for k in ["backup", "yedek"]):
             return ParsedIntent(action="backup_app", app_name=app_name, raw=stripped)
-        if any(k in lowered for k in ["deploy", "yayinla"]):
+        if any(k in lowered_norm for k in ["deploy", "yayinla"]):
             return ParsedIntent(action="deploy_app", app_name=app_name, raw=stripped)
-        if any(k in lowered for k in ["restart", "yeniden baslat"]):
+        if any(k in lowered_norm for k in ["restart", "yeniden baslat"]):
             return ParsedIntent(action="restart_app", app_name=app_name, raw=stripped)
-        if any(k in lowered for k in ["durdur", "stop"]):
+        if any(k in lowered_norm for k in ["durdur", "stop"]):
             return ParsedIntent(action="stop_app", app_name=app_name, raw=stripped)
-        if any(k in lowered for k in ["baslat", "start"]):
+        if any(k in lowered_norm for k in ["baslat", "start"]):
             return ParsedIntent(action="start_app", app_name=app_name, raw=stripped)
 
         return ParsedIntent(action="unknown", app_name=app_name, raw=stripped)
@@ -369,14 +370,30 @@ class OrchestratorAgent:
             return quoted.group(1) or quoted.group(2) or ""
         patterns = [
             r"(?:uygulama|app)\s+([a-zA-Z0-9._-]+)",
-            r"([a-zA-Z0-9._-]+)\s+(?:uygulamasini|uygulamayi)",
+            r"([a-zA-Z0-9._-]+)\s+uygulamasini",
             r"(?:restart|deploy|start|stop|yedekle)\s+([a-zA-Z0-9._-]+)",
         ]
+        reserved = {"et", "yap", "yapalim", "lutfen"}
         for pattern in patterns:
             match = re.search(pattern, text)
             if match:
-                return match.group(1)
+                value = match.group(1).strip()
+                if value and value not in reserved:
+                    return value
         return ""
+
+    def _normalize_turkish(self, text: str) -> str:
+        table = str.maketrans(
+            {
+                "ç": "c",
+                "ğ": "g",
+                "ı": "i",
+                "ö": "o",
+                "ş": "s",
+                "ü": "u",
+            }
+        )
+        return text.translate(table)
 
 
 orchestrator = OrchestratorAgent()
