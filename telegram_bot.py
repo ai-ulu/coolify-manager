@@ -19,6 +19,7 @@ from config import (
 from coolify_api import CoolifyAPI
 from agents.coordinator_agent import get_coordinator
 from agents.monitoring_agent import get_monitoring_agent
+from agents.orchestrator_agent import get_orchestrator
 from agents.scheduler_agent import get_scheduler_agent
 
 logger = logging.getLogger(__name__)
@@ -32,6 +33,7 @@ class CoolifyBot:
         self.monitoring = get_monitoring_agent()
         self.scheduler = get_scheduler_agent()
         self.coordinator = get_coordinator()
+        self.orchestrator = get_orchestrator()
         self.user_sessions: Dict[str, Dict] = {}
         self.allowed_users = set(TELEGRAM_CONFIG.get("allowed_users", []))
         self.admin_users = set(TELEGRAM_CONFIG.get("admin_users", []))
@@ -61,6 +63,9 @@ class CoolifyBot:
 
         self.app.add_handler(CommandHandler("schedule", self.cmd_schedule))
         self.app.add_handler(CommandHandler("servers", self.cmd_servers))
+        self.app.add_handler(CommandHandler("approve", self.cmd_approve))
+        self.app.add_handler(CommandHandler("reject", self.cmd_reject))
+        self.app.add_handler(CommandHandler("pending", self.cmd_pending))
 
         self.app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_message))
 
@@ -109,7 +114,9 @@ class CoolifyBot:
             "Backup:\n"
             "/backup [name] /backups /restore <backup_id> <app_id>\n\n"
             "Scheduler:\n"
-            "/schedule /servers"
+            "/schedule /servers\n\n"
+            "Approval:\n"
+            "/pending /approve <id> /reject <id>"
         )
 
     async def cmd_status(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -298,10 +305,46 @@ class CoolifyBot:
         await self.coordinator.check_all_servers()
         await update.message.reply_text(self.coordinator.list_servers())
 
+    async def cmd_approve(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        if not await self._check_allowed(update):
+            return
+        approval_id = context.args[0] if context and context.args else ""
+        if not approval_id:
+            await update.message.reply_text("Usage: /approve <approval_id>")
+            return
+        user_id = self._user_id(update)
+        is_admin = user_id in self.admin_users if self.admin_users else True
+        result = self.orchestrator.approve(approval_id, user_id, is_admin)
+        await update.message.reply_text(result)
+
+    async def cmd_reject(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        if not await self._check_allowed(update):
+            return
+        approval_id = context.args[0] if context and context.args else ""
+        if not approval_id:
+            await update.message.reply_text("Usage: /reject <approval_id>")
+            return
+        user_id = self._user_id(update)
+        is_admin = user_id in self.admin_users if self.admin_users else True
+        result = self.orchestrator.reject(approval_id, user_id, is_admin)
+        await update.message.reply_text(result)
+
+    async def cmd_pending(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        if not await self._check_allowed(update):
+            return
+        await update.message.reply_text(self.orchestrator.list_pending())
+
     async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not await self._check_allowed(update):
             return
-        text = (update.message.text or "").strip().lower()
+        raw_text = (update.message.text or "").strip()
+        user_id = self._user_id(update)
+        is_admin = user_id in self.admin_users if self.admin_users else True
+        result = await self.orchestrator.handle_user_text(user_id=user_id, text=raw_text, is_admin=is_admin)
+        if result.handled:
+            await update.message.reply_text(result.text)
+            return
+        text = raw_text.lower()
         if await self._handle_natural_language(update, text):
             return
         await update.message.reply_text("Anlamadim. Komutlar icin /help yazin.")

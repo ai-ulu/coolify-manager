@@ -65,6 +65,13 @@ OPENAI_CONFIG = {
     "fallback_model": _getenv("OPENAI_FALLBACK_MODEL", "gpt-4o"),
 }
 
+LLM_CONFIG = {
+    "enabled": _getenv_bool("LLM_ROUTER_ENABLED", True),
+    "api_base": _getenv("LITELLM_API_BASE", ""),
+    "api_key": _getenv("LITELLM_API_KEY", ""),
+    "model": _getenv("LITELLM_MODEL", "gpt-4o-mini"),
+}
+
 THRESHOLDS = {
     "cpu": {
         "warning": _getenv_int("THRESHOLD_CPU_WARNING", 80),
