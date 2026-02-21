@@ -304,7 +304,8 @@ class CoolifyBot:
 
     def run(self):
         logger.info("Telegram bot polling started")
-        self.app.run_polling(drop_pending_updates=True)
+        # Running in worker thread: disable signal handlers to avoid set_wakeup_fd errors.
+        self.app.run_polling(drop_pending_updates=True, stop_signals=None)
 
 
 bot: Optional[CoolifyBot] = None
