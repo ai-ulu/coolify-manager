@@ -4,7 +4,7 @@ Coolify API client.
 
 import logging
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import requests
 
@@ -21,14 +21,19 @@ class CoolifyAPI:
         self.session = requests.Session()
         self.session.headers.update(get_coolify_headers(self.api_key))
 
-    def _request(self, method: str, endpoint: str, log_404: bool = False, **kwargs) -> Optional[Dict]:
+    def _request(self, method: str, endpoint: str, log_404: bool = False, **kwargs) -> Optional[Any]:
         url = f"{self.base_url}{endpoint}"
         kwargs.setdefault("timeout", self.timeout)
 
         try:
             response = self.session.request(method, url, **kwargs)
             response.raise_for_status()
-            return response.json() if response.content else {}
+            if not response.content:
+                return {}
+            content_type = response.headers.get("content-type", "").lower()
+            if "application/json" in content_type:
+                return response.json()
+            return {"raw": response.text}
         except requests.exceptions.Timeout:
             logger.error("Timeout: %s", url)
             return {"error": "Timeout"}
@@ -36,7 +41,7 @@ class CoolifyAPI:
             logger.error("Connection error: %s", url)
             return {"error": "Connection error"}
         except requests.exceptions.HTTPError as exc:
-            status_code = exc.response.status_code if exc.response else None
+            status_code = exc.response.status_code if exc.response is not None else None
             if status_code == 404 and not log_404:
                 logger.debug("Endpoint not found (404): %s", url)
             else:
@@ -102,8 +107,8 @@ class CoolifyAPI:
             if isinstance(result, dict) and "error" not in result:
                 return result
 
-        # Fallback: if applications can be listed, API is effectively reachable.
-        apps = self.get_applications()
+        # Fallback: if applications endpoint is reachable and valid JSON list, API is reachable.
+        apps = self._request("GET", "/api/v1/applications")
         if isinstance(apps, list):
             return {"status": "reachable", "applications": len(apps)}
         return {"error": "server status unavailable"}
@@ -144,10 +149,7 @@ class CoolifyAPI:
         return f"{name}\nstatus={status}\nurl={url}"
 
     def test_connection(self) -> bool:
-        result = self.get_server_status()
-        if isinstance(result, dict) and "error" not in result:
-            return True
-        apps = self.get_applications()
+        apps = self._request("GET", "/api/v1/applications")
         return isinstance(apps, list)
 
 
