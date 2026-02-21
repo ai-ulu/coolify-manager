@@ -5,16 +5,15 @@ CPU, RAM, Disk, Network, Container durumlarını takip eder
 
 import asyncio
 import psutil
-import time
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional
+from typing import Dict, List
 from dataclasses import dataclass, field
 from collections import deque
 import logging
-import json
+import os
 
-from ..config import MONITORING_CONFIG, THRESHOLDS
-from ..coolify_api import CoolifyAPI
+from config import MONITORING_CONFIG, THRESHOLDS
+from coolify_api import CoolifyAPI
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +69,7 @@ class MonitoringAgent:
         self.cooldown = timedelta(minutes=MONITORING_CONFIG["alert_cooldown_minutes"])
         self.running = False
         self.thresholds = THRESHOLDS
+        self.disk_target = "C:\\" if os.name == "nt" else "/"
     
     # ==================== SİSTEM METRİKLERİ ====================
     
@@ -77,13 +77,13 @@ class MonitoringAgent:
         """Sistem metriklerini çeker (psutil)"""
         # CPU
         cpu_percent = psutil.cpu_percent(interval=1)
-        load_avg = psutil.getloadavg()
+        load_avg = psutil.getloadavg() if hasattr(psutil, "getloadavg") else (0.0, 0.0, 0.0)
         
         # RAM
         ram = psutil.virtual_memory()
         
         # Disk
-        disk = psutil.disk_usage('/')
+        disk = psutil.disk_usage(self.disk_target)
         
         # Network
         net = psutil.net_io_counters()

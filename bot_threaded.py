@@ -4,6 +4,7 @@ Telegram Bot - Threaded Version
 """
 
 import asyncio
+import os
 import logging
 import threading
 from telegram import Update
@@ -13,7 +14,7 @@ import psutil
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-TOKEN = "7983514177:AAEk5pO0q1w209q5-Im1iRkxV6v3FS0UIP8"
+TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 
 # ==================== HANDLERS ====================
 
@@ -135,3 +136,5 @@ if __name__ == "__main__":
         t.join()
     except KeyboardInterrupt:
         print("\nBot durduruldu.")
+
+

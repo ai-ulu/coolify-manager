@@ -4,6 +4,7 @@ Simple Telegram Bot for Coolify Manager
 """
 
 import asyncio
+import os
 import logging
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
@@ -12,7 +13,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-TOKEN = "7983514177:AAEk5pO0q1w209q5-Im1iRkxV6v3FS0UIP8"
+TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 
 async def start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Start command"""
@@ -202,3 +203,5 @@ if __name__ == "__main__":
     import nest_asyncio
     nest_asyncio.apply()
     asyncio.get_event_loop().run_forever()
+
+

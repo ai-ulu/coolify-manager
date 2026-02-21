@@ -6,22 +6,20 @@ Ana Çalıştırma Dosyası
 
 import asyncio
 import logging
-import os
 import signal
 import sys
 from pathlib import Path
 
 # Proje dizinini ekle
 sys.path.insert(0, str(Path(__file__).parent))
+Path("logs").mkdir(parents=True, exist_ok=True)
 
-from coolify_manager import (
-    get_monitoring_agent,
-    get_scheduler_agent,
-    get_coordinator,
-    create_bot,
-    TELEGRAM_CONFIG,
-)
-from coolify_manager.coolify_api import get_api
+from config import TELEGRAM_CONFIG
+from coolify_api import get_api
+from agents.monitoring_agent import get_monitoring_agent
+from agents.scheduler_agent import get_scheduler_agent
+from agents.coordinator_agent import get_coordinator
+from telegram_bot import create_bot
 
 # Logging ayarları
 logging.basicConfig(

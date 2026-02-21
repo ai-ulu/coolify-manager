@@ -4,12 +4,11 @@ Coolify sunucusu ile iletişim kuran temel sınıf
 """
 
 import requests
-import json
-from typing import Optional, Dict, List, Any
+from typing import Optional, Dict, List
 from datetime import datetime
 import logging
 
-from .config import COOLIFY_CONFIG, get_coolify_headers
+from config import COOLIFY_CONFIG, get_coolify_headers
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +21,7 @@ class CoolifyAPI:
         self.api_key = api_key or COOLIFY_CONFIG["api_key"]
         self.timeout = COOLIFY_CONFIG["timeout"]
         self.session = requests.Session()
-        self.session.headers.update(get_coolify_headers())
+        self.session.headers.update(get_coolify_headers(self.api_key))
     
     def _request(self, method: str, endpoint: str, **kwargs) -> Optional[Dict]:
         """API isteği yapar"""

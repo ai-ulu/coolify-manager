@@ -10,8 +10,8 @@ from dataclasses import dataclass, field
 import logging
 import uuid
 
-from ..config import SERVERS
-from ..coolify_api import CoolifyAPI
+from config import SERVERS
+from coolify_api import CoolifyAPI
 
 logger = logging.getLogger(__name__)
 
