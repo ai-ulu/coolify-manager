@@ -9,7 +9,13 @@ from typing import Dict, Optional
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 
-from config import TELEGRAM_CONFIG
+from config import (
+    AUTONOMOUS_CONFIG,
+    BACKUP_CONFIG,
+    COOLIFY_CONFIG,
+    MONITORING_CONFIG,
+    TELEGRAM_CONFIG,
+)
 from coolify_api import CoolifyAPI
 from agents.coordinator_agent import get_coordinator
 from agents.monitoring_agent import get_monitoring_agent
@@ -295,7 +301,56 @@ class CoolifyBot:
     async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not await self._check_allowed(update):
             return
-        await update.message.reply_text("Use /help for command list")
+        text = (update.message.text or "").strip().lower()
+        if await self._handle_natural_language(update, text):
+            return
+        await update.message.reply_text("Anlamadim. Komutlar icin /help yazin.")
+
+    def _config_report(self) -> str:
+        """Human-readable and safe runtime configuration report."""
+        coolify_url = COOLIFY_CONFIG.get("url", "n/a")
+        api_key_set = bool(COOLIFY_CONFIG.get("api_key"))
+        bot_token_set = bool(TELEGRAM_CONFIG.get("bot_token"))
+        allowed_users = len(TELEGRAM_CONFIG.get("allowed_users", []))
+        admin_users = len(TELEGRAM_CONFIG.get("admin_users", []))
+
+        return (
+            "Yapilandirma Raporu:\n"
+            f"- Coolify URL: {coolify_url}\n"
+            f"- Coolify API key: {'set' if api_key_set else 'missing'}\n"
+            f"- Telegram token: {'set' if bot_token_set else 'missing'}\n"
+            f"- Allowed users: {allowed_users}\n"
+            f"- Admin users: {admin_users}\n"
+            f"- Monitor interval (sn): {MONITORING_CONFIG.get('interval_seconds')}\n"
+            f"- Backup auto: {BACKUP_CONFIG.get('auto_backup_enabled')}\n"
+            f"- Backup cron: {BACKUP_CONFIG.get('backup_schedule')}\n"
+            f"- Auto cleanup: {AUTONOMOUS_CONFIG.get('cleanup_enabled')}"
+        )
+
+    async def _handle_natural_language(self, update: Update, text: str) -> bool:
+        if not text:
+            return False
+
+        asks_server_check = any(k in text for k in ["sunucu", "server", "coolify"])
+        asks_status = any(k in text for k in ["kontrol", "durum", "status"])
+        asks_config = any(k in text for k in ["yapilandirma", "ayar", "config", "rapor"])
+
+        if asks_server_check and asks_status and asks_config:
+            await self.coordinator.check_all_servers()
+            server_summary = self.coordinator.get_unified_status()
+            server_list = self.coordinator.list_servers()
+            await update.message.reply_text(f"{server_summary}\n\n{server_list}\n{self._config_report()}")
+            return True
+
+        if asks_server_check and asks_status:
+            await self.cmd_status(update, None)
+            return True
+
+        if asks_server_check and asks_config:
+            await update.message.reply_text(self._config_report())
+            return True
+
+        return False
 
     async def send_alert(self, chat_id: str, message: str):
         try:
