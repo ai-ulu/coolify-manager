@@ -1,0 +1,1 @@
+- https://coolify.ai-ulu.com/ buraya deploy et.yolo modda basarılı deploy yapana kadar durma
