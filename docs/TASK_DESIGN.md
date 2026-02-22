@@ -26,12 +26,21 @@
 - [x] Convert compose/service templates to environment-driven secrets.
 
 ## Phase 5 - Verification
-- [ ] Static import smoke check (`python -c "import run"`).
-- [ ] Runtime smoke (`python run.py` with mock/real env).
-- [ ] Telegram RBAC smoke with one allowed and one blocked user.
+- [x] Static import smoke check (`python -c "import run"`).
+- [x] Runtime smoke (`python run.py` with mock/real env).
+- [x] Telegram RBAC smoke with one allowed and one blocked user.
+- [x] Natural-language status/config smoke in Telegram.
+- [x] Natural-language mutating command must require approval token.
 
-## Phase 6 - Release
-- [ ] Commit changes with clear scope.
-- [ ] Push to target branch.
-- [ ] Trigger Coolify deployment.
-- [ ] Validate app health and logs post-deploy.
+## Phase 6 - Orchestrator Expansion
+- [x] Add `OrchestratorAgent` with role-based sub-agents.
+- [x] Add approval queue with TTL for risky actions.
+- [x] Add Telegram commands `/pending`, `/approve`, `/reject`.
+- [x] Add LiteLLM optional intent routing with heuristic fallback.
+- [x] Fix Turkish natural-language app name parsing (`uygulamasini/uygulamasını`).
+
+## Phase 7 - Release
+- [x] Commit changes with clear scope.
+- [x] Push to target branch.
+- [x] Trigger Coolify deployment.
+- [x] Validate app health and logs post-deploy.

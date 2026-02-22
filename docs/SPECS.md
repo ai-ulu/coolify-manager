@@ -37,7 +37,20 @@
   - Mutating commands require `admin_users` (if configured).
 - No duplicate command routing conflicts.
 
-### FR-8 Notifications
+### FR-8 Orchestrator + Sub-Agents
+- Natural-language messages must be routed by `OrchestratorAgent`.
+- Orchestrator must dispatch to role sub-agents (monitoring/deploy/backup/security/reporter).
+- Mutating actions from natural language must create pending approval records.
+- Approval commands must exist and work:
+  - `/pending`
+  - `/approve <id>`
+  - `/reject <id>`
+
+### FR-9 LLM Optional Routing
+- System must work without LiteLLM using heuristic intent parsing.
+- If LiteLLM config exists, intent parsing may use OpenAI-compatible `/chat/completions`.
+- Failure in LLM parsing must fallback to deterministic heuristic parser.
+### FR-10 Notifications
 - Telegram bot token and chat ids must come from env.
 - Missing token should disable send path gracefully.
 
@@ -65,3 +78,7 @@
 - `BACKUP_SCHEDULE`
 - `AUTO_CLEANUP_ENABLED`
 - `AUTO_CLEANUP_PATHS`
+- `LLM_ROUTER_ENABLED`
+- `LITELLM_API_BASE`
+- `LITELLM_API_KEY`
+- `LITELLM_MODEL`
