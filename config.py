@@ -42,6 +42,12 @@ def _parse_int_list(value: str) -> List[int]:
     return result
 
 
+def _parse_str_list(value: str) -> List[str]:
+    if not value:
+        return []
+    return [item.strip().lower() for item in value.split(",") if item.strip()]
+
+
 COOLIFY_CONFIG = {
     "url": _getenv("COOLIFY_API_URL", "http://localhost:8000"),
     "api_key": _getenv("COOLIFY_API_KEY", ""),
@@ -108,6 +114,7 @@ AUTONOMOUS_CONFIG = {
     "cleanup_enabled": _getenv_bool("AUTO_CLEANUP_ENABLED", False),
     "cleanup_paths": [p.strip() for p in _getenv("AUTO_CLEANUP_PATHS", "").split(",") if p.strip()],
     "cleanup_days": _getenv_int("AUTO_CLEANUP_DAYS", 7),
+    "action_allowlist": _parse_str_list(_getenv("ACTION_ALLOWLIST_APPS", "")),
 }
 
 LOG_CONFIG = {

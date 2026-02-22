@@ -70,6 +70,8 @@ class SecuritySubAgent:
         bot_token_set = bool(TELEGRAM_CONFIG.get("bot_token"))
         llm_key_set = bool(LLM_CONFIG.get("api_key"))
         llm_url = LLM_CONFIG.get("api_base", "n/a")
+        allowlist = AUTONOMOUS_CONFIG.get("action_allowlist", [])
+        allowlist_text = ",".join(allowlist) if allowlist else "ALL"
         return (
             "Yapilandirma Raporu:\n"
             f"- Coolify URL: {coolify_url}\n"
@@ -81,7 +83,8 @@ class SecuritySubAgent:
             f"- Admin users: {len(TELEGRAM_CONFIG.get('admin_users', []))}\n"
             f"- Backup auto: {BACKUP_CONFIG.get('auto_backup_enabled')}\n"
             f"- Backup cron: {BACKUP_CONFIG.get('backup_schedule')}\n"
-            f"- Auto cleanup: {AUTONOMOUS_CONFIG.get('cleanup_enabled')}"
+            f"- Auto cleanup: {AUTONOMOUS_CONFIG.get('cleanup_enabled')}\n"
+            f"- Action allowlist apps: {allowlist_text}"
         )
 
 
@@ -98,6 +101,12 @@ class DeploySubAgent:
         if exact:
             return exact
         return next((a for a in apps if target in a.get("name", "").lower()), None)
+
+    def is_action_allowed(self, app_name: str) -> bool:
+        allowlist = AUTONOMOUS_CONFIG.get("action_allowlist", [])
+        if not allowlist:
+            return True
+        return app_name.lower() in allowlist
 
     def list_apps(self) -> str:
         apps = self.api.get_applications()
@@ -213,11 +222,14 @@ class OrchestratorAgent:
             app = self.deploy.find_app(intent.app_name)
             if not app:
                 return AgentResult("Uygulama bulunamadi.")
+            app_name = str(app.get("name", intent.app_name))
+            if not self.deploy.is_action_allowed(app_name):
+                return AgentResult(f"Bu uygulama policy geregi mutating action icin kapali: {app_name}")
 
             approval = self._create_approval(
                 action=action,
                 app_id=str(app.get("id")),
-                app_name=str(app.get("name", intent.app_name)),
+                app_name=app_name,
                 requested_by=user_id,
             )
             return AgentResult(

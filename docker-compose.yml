@@ -20,6 +20,7 @@ services:
       - BACKUP_SCHEDULE=${BACKUP_SCHEDULE:-0 2 * * *}
       - AUTO_CLEANUP_ENABLED=${AUTO_CLEANUP_ENABLED:-false}
       - AUTO_CLEANUP_PATHS=${AUTO_CLEANUP_PATHS:-}
+      - ACTION_ALLOWLIST_APPS=${ACTION_ALLOWLIST_APPS:-}
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs
